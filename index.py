@@ -1,0 +1,519 @@
+from flask import Flask
+
+app = Flask(__name__)
+
+HTML = """<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>वेद ज्ञान — चारों वेदों का परिचय</title>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Sanskrit:ital@0;1&family=Noto+Sans+Devanagari:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --saffron: #E8621A;
+    --saffron-light: #FDF0E8;
+    --gold: #C8900A;
+    --gold-light: #FDF6E3;
+    --cream: #FAF6EF;
+    --ink: #1C1409;
+    --ink-soft: #4A3728;
+    --ink-muted: #8B7355;
+    --border: rgba(200,144,10,0.2);
+    --border-strong: rgba(200,144,10,0.45);
+    --white: #FFFFFF;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans Devanagari', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    background: var(--white);
+    border-bottom: 1px solid var(--border-strong);
+    padding: 1.25rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-om {
+    font-family: 'Tiro Devanagari Sanskrit', serif;
+    font-size: 32px;
+    color: var(--saffron);
+    line-height: 1;
+  }
+  .header-text h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: 0.5px;
+  }
+  .header-text p {
+    font-size: 12px;
+    color: var(--ink-muted);
+    margin-top: 2px;
+  }
+
+  /* Layout */
+  .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  /* Veda tabs */
+  .veda-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+  .tab-btn {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 8px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.18s;
+    font-family: 'Noto Sans Devanagari', sans-serif;
+  }
+  .tab-btn:hover { border-color: var(--border-strong); background: var(--gold-light); }
+  .tab-btn.active { border-width: 2px; }
+  .tab-icon { font-size: 24px; display: block; margin-bottom: 5px; }
+  .tab-name { font-size: 14px; font-weight: 600; color: var(--ink); }
+  .tab-sub { font-size: 11px; color: var(--ink-muted); margin-top: 3px; }
+
+  /* Progress */
+  .progress-bar { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 1.5rem; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 2px; transition: width 0.35s ease; }
+
+  /* Cards */
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Veda header inside card */
+  .veda-header { display: flex; gap: 18px; align-items: flex-start; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
+  .veda-emblem { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; }
+  .veda-meta h2 { font-size: 20px; font-weight: 600; margin-bottom: 5px; }
+  .veda-meta p { font-size: 13px; color: var(--ink-soft); line-height: 1.7; }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
+
+  /* Section grid */
+  .section-label { font-size: 12px; color: var(--ink-muted); font-weight: 500; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .section-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 1.25rem; }
+  .section-card {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    font-family: 'Noto Sans Devanagari', sans-serif;
+  }
+  .section-card:hover { border-color: var(--border-strong); }
+  .section-card.active { border-width: 2px; }
+  .section-card-icon { font-size: 18px; margin-bottom: 5px; }
+  .section-card-name { font-size: 12px; font-weight: 600; color: var(--ink); }
+  .section-card-sub { font-size: 10px; color: var(--ink-muted); margin-top: 2px; }
+
+  /* Detail box */
+  .detail-box {
+    background: var(--cream);
+    border-left: 3px solid var(--saffron);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 1rem 1.25rem;
+  }
+  .detail-box h3 { font-size: 14px; font-weight: 600; margin-bottom: 7px; color: var(--ink); }
+  .detail-box p { font-size: 13px; color: var(--ink-soft); line-height: 1.8; }
+
+  /* Hymn */
+  .hymn-label { font-size: 12px; color: var(--ink-muted); font-weight: 500; margin-bottom: 10px; }
+  .hymn-box { background: var(--gold-light); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); padding: 1.25rem; }
+  .hymn-sanskrit { font-family: 'Tiro Devanagari Sanskrit', serif; font-size: 16px; color: var(--ink); line-height: 2; margin-bottom: 10px; }
+  .hymn-divider { height: 1px; background: var(--border-strong); margin-bottom: 10px; }
+  .hymn-meaning { font-size: 13px; color: var(--ink-soft); line-height: 1.8; }
+  .hymn-source { font-size: 11px; color: var(--ink-muted); margin-top: 8px; font-style: italic; }
+
+  /* Concepts */
+  .concept-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
+  .chip {
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: var(--cream);
+    border: 1px solid var(--border-strong);
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Noto Sans Devanagari', sans-serif;
+  }
+  .chip:hover { background: var(--gold-light); color: var(--ink); }
+  .chip.active { background: var(--gold-light); color: var(--gold); border-color: var(--gold); font-weight: 600; }
+  .concept-empty { font-size: 12px; color: var(--ink-muted); font-style: italic; }
+
+  /* Nav dots */
+  .nav-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .dots { display: flex; gap: 7px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); cursor: pointer; transition: background 0.15s; }
+  .dot.active { background: var(--saffron); }
+
+  /* Ask button */
+  .ask-btn {
+    width: 100%;
+    padding: 13px;
+    background: var(--saffron-light);
+    border: 1.5px solid var(--saffron);
+    border-radius: var(--radius-sm);
+    color: var(--saffron);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Noto Sans Devanagari', sans-serif;
+    transition: background 0.15s;
+    margin-top: 4px;
+  }
+  .ask-btn:hover { background: #fde0cf; }
+
+  /* Mandala decoration */
+  .mandala-bg {
+    text-align: center;
+    font-size: 80px;
+    opacity: 0.04;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 0;
+    user-select: none;
+  }
+
+  @media (max-width: 600px) {
+    .veda-tabs { grid-template-columns: repeat(2, 1fr); }
+    .section-grid { grid-template-columns: repeat(2, 1fr); }
+    .veda-header { flex-direction: column; }
+    .container { padding: 1rem; }
+    .header { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mandala-bg">ॐ</div>
+
+<header class="header">
+  <div class="header-om">ॐ</div>
+  <div class="header-text">
+    <h1>वेद ज्ञान</h1>
+    <p>चारों वेदों का सरल परिचय — हिंदी में</p>
+  </div>
+</header>
+
+<div class="container">
+  <div class="veda-tabs" id="vedaTabs"></div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div id="mainContent"></div>
+</div>
+
+<script>
+const VEDAS = [
+  {
+    id: 'rig',
+    name: 'ऋग्वेद',
+    sub: 'ऋचाओं का वेद',
+    icon: '🔥',
+    color: '#BA7517',
+    bg: '#FDF6E3',
+    border: '#C8900A',
+    accent: '#BA7517',
+    परिचय: 'सबसे प्राचीन वेद (लगभग १५०० ई.पू.), जिसमें १०२८ सूक्त और १०,५५२ ऋचाएँ हैं। यह देवताओं की स्तुति में रचे गए भजनों का विशाल संग्रह है।',
+    देवता: 'अग्नि, इंद्र, वरुण, मित्र, सूर्य',
+    भाषा: 'वैदिक संस्कृत',
+    सूक्त: '१०२८',
+    मंडल: '१०',
+    badges: ['सर्वप्राचीन वेद', '१०२८ सूक्त', '१० मंडल'],
+    sections: [
+      { name: 'मंडल', sub: 'दस ग्रंथ खंड', icon: '📖' },
+      { name: 'संहिता', sub: 'मूल मंत्र संग्रह', icon: '📜' },
+      { name: 'ब्राह्मण', sub: 'कर्मकांड विवरण', icon: '🕯' },
+      { name: 'आरण्यक', sub: 'वन ग्रंथ', icon: '🌿' },
+    ],
+    sectionDetails: [
+      { title: 'मंडल — दस ग्रंथ खंड', text: 'ऋग्वेद १० मंडलों में विभाजित है। मंडल २ से ७ सबसे प्राचीन "कुल-ग्रंथ" हैं, जो विशेष ऋषि-वंशों से जुड़े हैं। प्रत्येक मंडल में अनेक सूक्त (भजन) हैं। मंडल १, ८, ९, १० बाद में जोड़े गए।' },
+      { title: 'संहिता — मूल मंत्र संग्रह', text: 'संहिता प्रत्येक वेद की मूल परत है — वास्तविक मंत्रों या स्तुतियों का संग्रह। ऋग्वेद की संहिता में १०,५५२ छंद हैं, जो मुख्यतः अग्नि और इंद्र को संबोधित हैं।' },
+      { title: 'ब्राह्मण — यज्ञ विधि ग्रंथ', text: 'प्रत्येक वेद से जुड़े गद्य ग्रंथ जो वैदिक यज्ञों के अर्थ और विधि समझाते हैं। ऋग्वेद का ब्राह्मण ग्रंथ "ऐतरेय ब्राह्मण" है, जो सोम यज्ञ और राज्याभिषेक के लिए महत्वपूर्ण है।' },
+      { title: 'आरण्यक — वन ग्रंथ', text: 'ये ग्रंथ कर्मकांड केंद्रित ब्राह्मणों और दार्शनिक उपनिषदों के बीच की कड़ी हैं। वनों में ध्यान करते ऋषियों द्वारा रचित, जो यज्ञों की प्रतीकात्मक व्याख्या करते हैं।' },
+    ],
+    hymn: {
+      sanskrit: 'अग्निमीळे पुरोहितं यज्ञस्य देवमृत्विजम्।\\nहोतारं रत्नधातमम्॥',
+      arth: '"मैं अग्नि की स्तुति करता हूँ — यज्ञ के पुरोहित, देव ऋत्विज, होता (आह्वानकर्ता) और रत्नों के दाता।"',
+      source: '— ऋग्वेद १.१.१ (प्रथम ऋचा)'
+    },
+    concepts: ['अग्नि', 'इंद्र', 'सोम', 'वरुण', 'ऋत (सत्य-व्यवस्था)', 'गायत्री मंत्र'],
+    conceptInfo: {
+      'अग्नि': 'अग्नि देव — मनुष्यों और देवताओं के बीच दूत। अग्नि यज्ञ की आहुतियाँ देवलोक तक पहुँचाते हैं। ऋग्वेद की पहली ऋचा उन्हीं को समर्पित है।',
+      'इंद्र': 'वैदिक देवताओं के राजा, तूफान और युद्ध के देव। इंद्र ने अजगर वृत्र को मारकर ब्रह्मांडीय जल मुक्त किए — यह सबसे प्रसिद्ध वैदिक कथा है।',
+      'सोम': 'एक पवित्र अनुष्ठान पेय और उससे जुड़े देव। सोम दिव्य प्रेरणा, अमरत्व और आनंद का प्रतीक है।',
+      'वरुण': 'ऋत (ब्रह्मांडीय नियम) और नैतिक व्यवस्था के देव। वरुण सभी कर्मों को देखते हैं और पश्चाताप करने वालों के पाप क्षमा करते हैं।',
+      'ऋत (सत्य-व्यवस्था)': 'प्राकृतिक व्यवस्था, सत्य और ब्रह्मांडीय सामंजस्य का सिद्धांत — धर्म की अवधारणा का पूर्वज।',
+      'गायत्री मंत्र': '"ॐ भूर्भुवः स्वः तत्सवितुर्वरेण्यं भर्गो देवस्य धीमहि धियो यो नः प्रचोदयात्" — सूर्य देव को समर्पित, सबसे पवित्र वैदिक मंत्र।'
+    }
+  },
+  {
+    id: 'sama',
+    name: 'सामवेद',
+    sub: 'गानों का वेद',
+    icon: '🎵',
+    color: '#185FA5',
+    bg: '#E8F2FC',
+    border: '#378ADD',
+    accent: '#185FA5',
+    परिचय: 'संगीत का वेद — १८७५ स्वर-युक्त ऋचाओं का संग्रह जो सोम यज्ञ के दौरान गाई जाती थीं। भारतीय शास्त्रीय संगीत की जड़ें यहीं हैं।',
+    देवता: 'सोम, इंद्र, अग्नि', भाषा: 'वैदिक संस्कृत', सूक्त: '१८७५', मंडल: null,
+    badges: ['संगीत का वेद', '१८७५ ऋचाएँ', 'भारतीय संगीत का स्रोत'],
+    sections: [
+      { name: 'पूर्वार्चिक', sub: 'प्रथम भाग', icon: '🎶' },
+      { name: 'उत्तरार्चिक', sub: 'द्वितीय भाग', icon: '🎼' },
+      { name: 'ब्राह्मण', sub: 'यज्ञ विवरण', icon: '📋' },
+      { name: 'उपनिषद', sub: 'छांदोग्य व केन', icon: '🧘' },
+    ],
+    sectionDetails: [
+      { title: 'पूर्वार्चिक — प्रथम भाग', text: 'दो प्रमुख भागों में से पहला, जिसमें ५८५ ऋचाएँ हैं, जो अधिकतर ऋग्वेद से ली गई हैं किंतु राग-बद्ध हैं। छः अध्यायों (प्रपाठकों) में विभाजित, विशिष्ट देवताओं को समर्पित।' },
+      { title: 'उत्तरार्चिक — द्वितीय भाग', text: 'बड़ा भाग जिसमें १,२५५ ऋचाएँ हैं। ये सोम यज्ञ की विशिष्ट आवश्यकताओं के अनुसार पुनर्व्यवस्थित हैं। सामन गाना एक परिष्कृत संगीत प्रणाली थी।' },
+      { title: 'ब्राह्मण — यज्ञ मार्गदर्शिका', text: 'सामवेद के ब्राह्मण (तांड्य महाब्राह्मण, जैमिनीय ब्राह्मण) सोम यज्ञ की विस्तृत विधि बताते हैं — किस क्षण कौन सा राग गाना है।' },
+      { title: 'उपनिषद — दर्शन', text: 'छांदोग्य उपनिषद सबसे प्राचीन और महत्वपूर्ण उपनिषदों में से एक है। इसमें "तत्त्वमसि" (वह तुम हो) जैसी महावाक्य शिक्षाएँ हैं।' },
+    ],
+    hymn: {
+      sanskrit: 'उद्गायथ उत गायत\\nगायत्रीं छन्दसां मतम्।',
+      arth: '"ऊपर की ओर गाओ, और गाते रहो — गायत्री छंद, सभी मेट्रों की माँ।"',
+      source: '— सामवेद, उत्तरार्चिक'
+    },
+    concepts: ['सामन (राग)', 'उद्गीथ', 'छांदोग्य', 'तत्त्वमसि', 'सोम यज्ञ', 'पंचम स्वर'],
+    conceptInfo: {
+      'सामन (राग)': 'सामवेद के संगीत मंत्र। उद्गातृ पुजारी इन्हें पंचस्वरीय पद्धति में गाते थे — भारतीय शास्त्रीय संगीत के पूर्वज।',
+      'उद्गीथ': 'सोम यज्ञ का केंद्रीय राग, "ॐ" से आरंभ होता है। छांदोग्य उपनिषद उद्गीथ को ब्रह्मन के प्रतीक के रूप में खोलता है।',
+      'छांदोग्य': 'सामवेद का प्राचीनतम उपनिषद, जिसमें "तत्त्वमसि" की शिक्षा और उद्दालक आरुणि की कथाएँ हैं।',
+      'तत्त्वमसि': '"वह तुम हो" — वेदांत के चार महावाक्यों में से एक। यह व्यक्तिगत आत्मा (आत्मन) और ब्रह्मांडीय चेतना (ब्रह्मन) की एकता घोषित करता है।',
+      'सोम यज्ञ': 'केंद्रीय वैदिक यज्ञ जिसमें सोम रस की आहुति होती थी। सामवेद ने इस यज्ञ की संपूर्ण संगीत विधि प्रदान की।',
+      'पंचम स्वर': 'भारतीय संगीत के सात स्वरों (सा, रे, ग, म, प, ध, नि) में पंचम — "प" — का उल्लेख सामवेद में मिलता है।'
+    }
+  },
+  {
+    id: 'yajur',
+    name: 'यजुर्वेद',
+    sub: 'यज्ञों का वेद',
+    icon: '🕯',
+    color: '#3B6D11',
+    bg: '#EAF3DE',
+    border: '#639922',
+    accent: '#3B6D11',
+    परिचय: 'यज्ञ-विधि के मंत्रों का वेद — अध्वर्यु पुजारियों द्वारा अनुष्ठान के दौरान बोले जाने वाले गद्य मंत्र। इसमें रुद्र और विष्णु की महिमा है।',
+    देवता: 'रुद्र, विष्णु, इंद्र', भाषा: 'वैदिक संस्कृत', सूक्त: '१९७५+', मंडल: null,
+    badges: ['यज्ञ का वेद', 'दो संहिताएँ', 'श्री रुद्रम् स्रोत'],
+    sections: [
+      { name: 'कृष्ण यजुर्वेद', sub: 'मिश्रित गद्य-पद्य', icon: '⚫' },
+      { name: 'शुक्ल यजुर्वेद', sub: 'शुद्ध मंत्र संग्रह', icon: '⚪' },
+      { name: 'शतपथ ब्राह्मण', sub: 'महत्वपूर्ण ग्रंथ', icon: '📚' },
+      { name: 'उपनिषद', sub: 'बृहदारण्यक व ईश', icon: '🧘' },
+    ],
+    sectionDetails: [
+      { title: 'कृष्ण यजुर्वेद — काली शाखा', text: '"कृष्ण" इसलिए कि मंत्र और व्याख्या (ब्राह्मण गद्य) एक ही ग्रंथ में मिश्रित हैं। प्रमुख शाखाएँ: तैत्तिरीय संहिता, मैत्रायणी संहिता। श्री रुद्रम् का स्रोत।' },
+      { title: 'शुक्ल यजुर्वेद — सफेद शाखा', text: '"शुक्ल" इसलिए कि मंत्र और व्याख्या अलग रखी गई — शुद्ध व्यवस्था। दो शाखाएँ: वाजसनेयी माध्यंदिन और काण्व। ईशावास्योपनिषद और शतपथ ब्राह्मण का स्रोत।' },
+      { title: 'शतपथ ब्राह्मण — महान ग्रंथ', text: 'शुक्ल यजुर्वेद का सबसे महत्वपूर्ण ब्राह्मण ग्रंथ। वैदिक अग्नि यज्ञों का विस्तृत विवरण, जिसमें अग्निचयन (अग्नि वेदी निर्माण) और प्रारंभिक ब्रह्मांड संबंधी मिथक शामिल हैं।' },
+      { title: 'उपनिषद — दो महारत्न', text: 'बृहदारण्यक उपनिषद (सबसे बड़ा) और ईशावास्योपनिषद (सबसे छोटा — केवल १८ श्लोक) दोनों यजुर्वेद से हैं। याज्ञवल्क्य की आत्मन शिक्षाएँ बृहदारण्यक में हैं।' },
+    ],
+    hymn: {
+      sanskrit: 'शं नो मित्रः शं वरुणः।\\nशं नो भवत्वर्यमा।\\nशं न इन्द्रो बृहस्पतिः।\\nशं नो विष्णुरुरुक्रमः॥',
+      arth: '"मित्र हमें सुख दें; वरुण हमें सुख दें; अर्यमा हम पर कृपालु हों; इंद्र और बृहस्पति हमें आशीर्वाद दें; विष्णु — महान कदमों वाले — हम पर अनुग्रह करें।"',
+      source: '— तैत्तिरीयोपनिषद, शांति पाठ'
+    },
+    concepts: ['अध्वर्यु', 'श्री रुद्रम्', 'याज्ञवल्क्य', 'अग्निचयन', 'ईशावास्योपनिषद', 'नेति नेति'],
+    conceptInfo: {
+      'अध्वर्यु': 'यजुर्वेद का पुजारी जो यज्ञ के दौरान वास्तविक क्रियाएँ करता है और प्रत्येक चरण पर यजुस (गद्य मंत्र) बोलता है।',
+      'श्री रुद्रम्': 'कृष्ण यजुर्वेद (तैत्तिरीय संहिता) का प्रसिद्ध स्तोत्र जो रुद्र (प्रोटो-शिव) को समर्पित है। इसमें रुद्र के १०८ नाम हैं।',
+      'याज्ञवल्क्य': 'बृहदारण्यक उपनिषद के महान ऋषि, जो आत्मन के बारे में साहसिक घोषणाओं के लिए प्रसिद्ध हैं। उन्होंने "नेति, नेति" से ब्रह्मन को समझाया।',
+      'अग्निचयन': 'शतपथ ब्राह्मण में वर्णित विस्तृत अग्नि-वेदी निर्माण यज्ञ — १०,८०० ईंटों से बाज के आकार की वेदी — अत्यंत जटिल वैदिक अनुष्ठान।',
+      'ईशावास्योपनिषद': 'सबसे छोटा उपनिषद (१८ श्लोक), शुक्ल यजुर्वेद के अंत में। सिखाता है: सारी सृष्टि दिव्य से व्याप्त है, आसक्ति रहित होकर जियो।',
+      'नेति नेति': '"न यह, न यह" — याज्ञवल्क्य की ब्रह्मन को नकार-विधि से समझाने की पद्धति। ब्रह्मन सभी श्रेणियों और विवरणों से परे है।'
+    }
+  },
+  {
+    id: 'atharva',
+    name: 'अथर्ववेद',
+    sub: 'ज्ञान का वेद',
+    icon: '🌿',
+    color: '#534AB7',
+    bg: '#EEEDFE',
+    border: '#7F77DD',
+    accent: '#534AB7',
+    परिचय: 'अथर्वन का वेद — मंत्र, चिकित्सा, ज्योतिष और दैनिक जीवन का ज्ञान। ७३० सूक्तों में जीवन के हर पहलू का समावेश। आयुर्वेद की जड़ें यहाँ हैं।',
+    देवता: 'भूमि (पृथ्वी), काम, ब्रह्मन', भाषा: 'वैदिक संस्कृत', सूक्त: '७३०', मंडल: null,
+    badges: ['चौथा वेद', '७३० सूक्त', 'आयुर्वेद का स्रोत'],
+    sections: [
+      { name: 'शौनकीया', sub: 'प्रमुख संहिता', icon: '📗' },
+      { name: 'पैप्पलाद', sub: 'प्राचीन संहिता', icon: '📕' },
+      { name: 'गोपथ ब्राह्मण', sub: 'एकमात्र ब्राह्मण', icon: '📋' },
+      { name: 'उपनिषद', sub: 'मुंडक व माण्डूक्य', icon: '🧘' },
+    ],
+    sectionDetails: [
+      { title: 'शौनकीया — प्रमुख संहिता', text: 'सर्वाधिक प्रचलित संस्करण, जिसमें २० पुस्तकों में ७३० सूक्त हैं। चिकित्सा मंत्र, प्रेम मंत्र, राजकीय अनुष्ठान, दार्शनिक स्तुतियाँ और प्रसिद्ध "पृथ्वी सूक्त" (भूमि-स्तवन) शामिल हैं।' },
+      { title: 'पैप्पलाद — प्राचीन संहिता', text: 'अथर्ववेद का एक समानांतर, अधिक पुराना संस्करण, कश्मीरी पांडुलिपियों से आंशिक रूप से प्राप्त। लंबे समय तक खोया माना गया था, यह २०वीं सदी में पुनः खोजा गया।' },
+      { title: 'गोपथ ब्राह्मण', text: 'अथर्ववेद का एकमात्र ब्राह्मण। अन्य ब्राह्मणों की तुलना में अधिक पौराणिक — ब्रह्मा को सर्वोच्च देव मानता है और अथर्ववेद को ब्रह्मन पुजारी की भूमिका से जोड़ता है।' },
+      { title: 'उपनिषद — मुंडक व माण्डूक्य', text: 'मुंडकोपनिषद उच्च ज्ञान (ब्रह्मन-ज्ञान) और निम्न ज्ञान (अनुष्ठान-विज्ञान) में अंतर बताता है। माण्डूक्य उपनिषद (केवल १२ श्लोक) ॐ और चेतना की चार अवस्थाओं का विश्लेषण करता है।' },
+    ],
+    hymn: {
+      sanskrit: 'माता भूमिः पुत्रोऽहं पृथिव्याः।\\nपर्जन्यः पिता स उ नः पिपर्तु॥',
+      arth: '"भूमि मेरी माँ है, मैं पृथ्वी का पुत्र हूँ। पर्जन्य (वर्षा) पिता है — वह हमारा पालन करे।"',
+      source: '— अथर्ववेद १२.१.१२ (पृथ्वी सूक्त)'
+    },
+    concepts: ['पृथ्वी सूक्त', 'आयुर्वेद', 'माण्डूक्य', 'ॐ / AUM', 'ब्रह्मन', 'काम (इच्छा)'],
+    conceptInfo: {
+      'पृथ्वी सूक्त': 'सभी वेदों का सबसे लंबा सूक्त (६३ श्लोक) — पृथ्वी देवी की विस्तृत स्तुति। नदियों, पर्वतों, पौधों और मिट्टी का उत्सव — पर्यावरण चेतना का प्राचीनतम उदाहरण।',
+      'आयुर्वेद': 'अथर्ववेद में भारतीय चिकित्सा ज्ञान की सबसे प्रारंभिक परतें हैं — जड़ी-बूटी, चिकित्सा मंत्र और रोगों के उपचार। आयुर्वेद की जड़ें यहीं हैं।',
+      'माण्डूक्य': 'माण्डूक्य उपनिषद केवल १२ श्लोकों में ॐ का पूर्ण अर्थ प्रकट करता है। अद्वैत वेदांत इसे सर्वाधिक महत्वपूर्ण उपनिषद मानता है।',
+      'ॐ / AUM': 'प्रणव — आदि ध्वनि, ब्रह्मन का प्रतीक। अ = जागृत अवस्था, उ = स्वप्न अवस्था, म = सुषुप्ति, और ॐ के बाद का मौन = तुरीय (शुद्ध चेतना)।',
+      'ब्रह्मन': 'समस्त अस्तित्व की अंतर्निहित, अपरिवर्तनीय वास्तविकता — कोई व्यक्तिगत ईश्वर नहीं, बल्कि शुद्ध चेतना। आत्मन और ब्रह्मन की एकता ही मोक्ष है।',
+      'काम (इच्छा)': 'अथर्ववेद में प्रेम मंत्र और काम-देव के आह्वान हैं — इच्छा को एक ब्रह्मांडीय रचनात्मक शक्ति के रूप में सबसे पहला उल्लेख।'
+    }
+  }
+];
+
+let activeVeda = 0;
+let activeSection = 0;
+let activeConcept = null;
+
+function renderTabs() {
+  const el = document.getElementById('vedaTabs');
+  el.innerHTML = VEDAS.map((v, i) => `
+    <button class="tab-btn ${i === activeVeda ? 'active' : ''}"
+      onclick="setVeda(${i})"
+      style="${i === activeVeda ? `border-color:${v.border};border-width:2px` : ''}">
+      <span class="tab-icon">${v.icon}</span>
+      <div class="tab-name" style="${i === activeVeda ? `color:${v.accent}` : ''}">${v.name}</div>
+      <div class="tab-sub">${v.sub}</div>
+    </button>`).join('');
+}
+
+function renderProgress() {
+  const pct = ((activeVeda + 1) / 4) * 100;
+  const el = document.getElementById('progressFill');
+  el.style.width = pct + '%';
+  el.style.background = VEDAS[activeVeda].accent;
+}
+
+function renderMain() {
+  const v = VEDAS[activeVeda];
+  const sd = v.sectionDetails[activeSection];
+  const ci = activeConcept && v.conceptInfo[activeConcept];
+
+  document.getElementById('mainContent').innerHTML = `
+    <div class="card">
+      <div class="veda-header">
+        <div class="veda-emblem" style="background:${v.bg}">${v.icon}</div>
+        <div class="veda-meta">
+          <h2 style="color:${v.accent}">${v.name}
+            <span style="font-size:14px;color:var(--ink-muted);font-weight:400"> — ${v.sub}</span>
+          </h2>
+          <p>${v.परिचय}</p>
+          <div class="badges">
+            ${v.badges.map(b => `<span class="badge" style="background:${v.bg};color:${v.accent};border:1px solid ${v.border}">${b}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-row">
+        <div class="section-label">खंड चुनें</div>
+        <div class="dots">${v.sections.map((_, i) =>
+          `<div class="dot ${i === activeSection ? 'active' : ''}"
+            style="${i === activeSection ? `background:${v.accent}` : ''}"
+            onclick="setSection(${i})"></div>`).join('')}
+        </div>
+      </div>
+
+      <div class="section-grid">
+        ${v.sections.map((s, i) => `
+          <div class="section-card ${i === activeSection ? 'active' : ''}"
+            onclick="setSection(${i})"
+            style="${i === activeSection ? `border-color:${v.accent};background:${v.bg}` : ''}">
+            <div class="section-card-icon">${s.icon}</div>
+            <div class="section-card-name" style="${i === activeSection ? `color:${v.accent}` : ''}">${s.name}</div>
+            <div class="section-card-sub">${s.sub}</div>
+          </div>`).join('')}
+      </div>
+
+      <div class="detail-box" style="border-left-color:${v.accent}">
+        <h3>${sd.title}</h3>
+        <p>${sd.text}</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="hymn-label">${v.name} की एक ऋचा</div>
+      <div class="hymn-box" style="background:${v.bg};border-color:${v.border}">
+        <div class="hymn-sanskrit">${v.hymn.sanskrit}</div>
+        <div class="hymn-divider" style="background:${v.border}"></div>
+        <div class="hymn-meaning">${v.hymn.arth}</div>
+        <div class="hymn-source">${v.hymn.source}</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label" style="margin-bottom:12px">प्रमुख अवधारणाएँ — किसी पर क्लिक करें</div>
+      <div class="concept-chips">
+        ${v.concepts.map(c => `
+          <span class="chip ${activeConcept === c ? 'active' : ''}"
+            onclick="setConcept('${c}')"
+            style="${activeConcept === c ? `background:${v.bg};color:${v.accent};border-color:${v.accent}` : ''}">
+            ${c}
+          </span>`).join('')}
+      </div>
+      ${ci
+        ? `<div class="detail-box" style="border-left-color:${v.accent}"><h3>${activeConcept}</h3><p>${ci}</p></div>`
+        : `<p class="concept-empty">किसी अवधारणा पर क्लिक करें और उसका अर्थ जानें।</p>`
+      }
+    </div>
+
+    <button class="ask-btn" style="border-color:${v.accent};color:${v.accent};background:${v.bg}"
+      onclick="window.location.href='https://claude.ai'">
+      ${v.name} के बारे में और जानें ↗
+    </button>
+  `;
+}
+
+function setVeda(i) { activeVeda = i; activeSection = 0; activeConcept = null; renderTabs(); renderProgress(); renderMain(); }
+function setSection(i) { activeSection = i; renderMain(); }
+function setConcept(c) { activeConcept = activeConcept === c ? null : c; renderMain(); }
+
+renderTabs();
+renderProgress();
+renderMain();
+</script>
+</body>
+</html>
+"""
+
+@app.route("/")
+def index():
+    return HTML
+
+@app.route("/<path:path>")
+def catch_all(path):
+    return HTML
+
+if __name__ == "__main__":
+    app.run(debug=True)
