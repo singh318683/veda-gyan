@@ -1126,7 +1126,7 @@ function renderHome(){
           <h2 style="color:${v.c}">${L(v.name)} <span style="font-size:13px;color:var(--muted);font-weight:400">— ${L(v.sub)}</span></h2>
         </div>
         <p>${L(v.p)}</p>
-        <div class="badges">${L(v.badges).map(b=>`<span class="badge" style="background:${v.bg};color:${v.c};border:1px solid ${v.bd}">${b}</span>`).join('')}</div>
+        <div class="badges">${(lang==='hi'?v.badges.hi:v.badges.en).map(b=>`<span class="badge" style="background:${v.bg};color:${v.c};border:1px solid ${v.bd}">${b}</span>`).join('')}</div>
         <div class="veda-actions">
           <button class="icon-btn ${bookmarks.includes(v.id)?'active':''}" onclick="toggleBM('${v.id}')">${bookmarks.includes(v.id)?'🔖 सेव है':'🏷 सेव करें'}</button>
           <button class="icon-btn ${readProgress[v.id]?'active':''}" onclick="markRead('${v.id}')">${readProgress[v.id]?'✅ पढ़ा':'📖 पढ़ा माना'}</button>
@@ -1191,7 +1191,7 @@ function renderHome(){
   <div class="card card-enter">
     <div class="section-label" style="margin-bottom:12px">${lang==='hi'?'मुख्य बातें — टैप करें':'Key Concepts — Tap to learn'}</div>
     <div class="concept-chips">
-      ${L(v.concepts).map((c,i)=>{const k=v.concepts.hi[i];return`<span class="chip ${activeConcept===k?'active':''}" onclick="setConcept('${k}')" style="${activeConcept===k?`background:${v.bg};color:${v.c};border-color:${v.c}`:''}"> ${c}</span>`}).join('')}
+      ${(lang==='hi'?v.concepts.hi:v.concepts.en).map((c,i)=>{const k=v.concepts.hi[i];return`<span class="chip ${activeConcept===k?'active':''}" onclick="setConcept('${k}')" style="${activeConcept===k?`background:${v.bg};color:${v.c};border-color:${v.c}`:''}"> ${c}</span>`}).join('')}
     </div>
     ${activeConcept&&v.ci[activeConcept]?`<div class="detail-box" style="border-left-color:${v.c};margin-top:4px"><h3>${activeConcept}</h3><p>${L(v.ci[activeConcept])}</p></div>`:`<p style="font-size:12px;color:var(--muted);font-style:italic">${lang==='hi'?'किसी बात पर टैप करें।':'Tap a concept to learn more.'}</p>`}
   </div>
@@ -1274,7 +1274,7 @@ function renderUpanishads(){
       <div class="up-card-teaser">${L(u.teaser)}</div>
       <div class="up-card-mv" style="background:${u.vedaColor}15;color:${u.vedaColor}">${u.mv}</div>
       <div class="up-card-badges">
-        ${L(u.tags).map(tg=>`<span class="up-mini-badge" style="background:${u.vedaColor}15;color:${u.vedaColor}">${tg}</span>`).join('')}
+        ${(lang==='hi'?u.tags:u.tagsEn).map(tg=>`<span class="up-mini-badge" style="background:${u.vedaColor}15;color:${u.vedaColor}">${tg}</span>`).join('')}
         ${bookmarks.includes('up_'+u.id)?'<span class="up-mini-badge" style="background:#F3F4F6;color:#666">🔖</span>':''}
         ${readProgress['up_'+u.id]?'<span class="up-mini-badge" style="background:#E8F5E9;color:#2E7D32">✅ पढ़ा</span>':''}
       </div>
@@ -1418,7 +1418,7 @@ function renderQuiz(){
     ${q.shloka?`<div class="qz-shloka">${q.shloka}</div>`:''}
     <div class="qz-q">${L(q.q)}</div>
     <div class="qz-opts">
-      ${L(q.opts).map((opt,i)=>{
+      ${(lang==='hi'?q.opts.hi:q.opts.en).map((opt,i)=>{
         let cls='qz-opt';
         if(quizState.answered){cls+=i===q.ans?' correct':i===quizState.sel?' wrong':'';}
         return`<button class="${cls}" ${quizState.answered?'disabled':''} onclick="answerQ(${i})">${opt}</button>`;
